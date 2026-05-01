@@ -11,6 +11,7 @@ def test_pr_review():
         "title": "Add database connection logic",
         "desc": "Setting up the initial DB connection helper.",
         "author": "dev-user",
+        "head_branch": "feature/db-setup",
         "raw_diff": """diff --git a/db.py b/db.py
 new file mode 100644
 index 0000000..e69de29

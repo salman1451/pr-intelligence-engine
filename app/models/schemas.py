@@ -10,7 +10,6 @@ class ReviewRequest(BaseModel):
     base_branch: str = "main"
     head_branch: str
     raw_diff: str
-    n8n_callback_url: str | None = None
 
 
 class ReviewResponse(BaseModel):
@@ -19,7 +18,6 @@ class ReviewResponse(BaseModel):
     decision: str
     severity: str
     score: float
-    github_review_id: int | None = None
     comment: str
     duration_seconds: float
 
@@ -42,5 +40,4 @@ class ReviewState(BaseModel):
     refactor: list[dict] = Field(default_factory=list)
     decision: str = "comment"
     comment: str = ""
-    github_review_id: int | None = None
     parse_error: bool = False

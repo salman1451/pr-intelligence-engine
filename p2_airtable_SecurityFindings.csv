@@ -1,3 +1,0 @@
-run_id,pr_number,repo,file_path,severity,category,description,suggested_fix,recorded_at
-3c1c5f74-5bb2-47df-a381-48b878fef001,101,owner/repo,src/db/queries.py,critical,SQL Injection,Untrusted input is interpolated directly into the SQL query,Use parameterized queries and bound parameters,2026-04-28T09:01:00Z
-3c1c5f74-5bb2-47df-a381-48b878fef001,101,owner/repo,src/auth/login.py,high,Hardcoded Secret,A secret token appears to be committed in source,Move the token to environment variables or a secret manager,2026-04-28T09:01:00Z

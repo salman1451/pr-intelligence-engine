@@ -1,3 +1,0 @@
-pr_number,repo,pr_title,pr_author,base_branch,head_branch,run_id,status,review_decision,security_severity_max,style_compliance_score,github_review_id,review_comment_body,feedback_collected,created_at,completed_at,duration_seconds
-101,owner/repo,Fix SQL query for user lookup,dev_alice,main,fix/sql-user-lookup,3c1c5f74-5bb2-47df-a381-48b878fef001,complete,request_changes,critical,72.0,587654321,"## AI Code Review",FALSE,2026-04-28T09:00:00Z,2026-04-28T09:01:10Z,70.0
-102,owner/repo,Add user profile endpoint,dev_bob,main,feat/user-profile,1a4f34b1-ef85-4873-9cf4-90b06c4cb002,complete,comment,none,88.0,587654322,"## AI Code Review",FALSE,2026-04-29T10:00:00Z,2026-04-29T10:01:05Z,65.0

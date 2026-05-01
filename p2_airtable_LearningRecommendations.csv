@@ -1,2 +1,0 @@
-generated_at,total_signals_analyzed,positive_rate,negative_rate,recommendation_summary,recommendations_json,applied
-2026-04-29T09:00:00Z,24,0.79,0.21,Security prompts perform well but style findings are often ignored,"[{""area"":""style_reviewer"",""action"":""tighten relevance of style findings""},{""area"":""security_reviewer"",""action"":""keep current prompt and monitor false positives""}]",FALSE

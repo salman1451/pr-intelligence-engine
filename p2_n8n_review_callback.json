@@ -1,0 +1,193 @@
+{
+  "name": "Review Completion Callback (Optional)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "review-callback",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "node-callback-webhook",
+      "name": "Callback Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    airtable_record_id: body.airtable_record_id || '',\n    run_id: body.run_id,\n    pr_number: body.pr_number,\n    repo: body.repo,\n    decision: body.decision,\n    security_severity_max: body.security_severity_max || 'none',\n    style_compliance_score: body.style_compliance_score || 0,\n    review_comment_body: body.review_comment_body || '',\n    duration_seconds: body.duration_seconds || 0\n  }\n}];"
+      },
+      "id": "node-parse-callback",
+      "name": "Parse Callback Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $json.repo }}/pulls/{{ $json.pr_number }}/reviews",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.GITHUB_TOKEN }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ body: $json.review_comment_body, event: $json.decision === 'request_changes' ? 'REQUEST_CHANGES' : $json.decision === 'approve' ? 'APPROVE' : 'COMMENT' }",
+        "options": {}
+      },
+      "id": "node-post-github-review",
+      "name": "Post GitHub Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Callback Data').first().json.airtable_record_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "id": "node-has-airtable-id",
+      "name": "Has Airtable Record ID?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "PRReviews",
+        "id": "={{ $('Parse Callback Data').first().json.airtable_record_id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_id": "={{ $('Parse Callback Data').first().json.run_id }}",
+            "status": "complete",
+            "review_decision": "={{ $('Parse Callback Data').first().json.decision }}",
+            "security_severity_max": "={{ $('Parse Callback Data').first().json.security_severity_max }}",
+            "style_compliance_score": "={{ $('Parse Callback Data').first().json.style_compliance_score }}",
+            "github_review_id": "={{ $('Post GitHub Review').first().json.id }}",
+            "review_comment_body": "={{ $('Parse Callback Data').first().json.review_comment_body }}",
+            "completed_at": "={{ $now }}",
+            "duration_seconds": "={{ $('Parse Callback Data').first().json.duration_seconds }}"
+          }
+        }
+      },
+      "id": "node-update-airtable",
+      "name": "Update PR Review Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Callback Data').first().json.security_severity_max }}",
+              "rightValue": "critical",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "node-check-critical",
+      "name": "Is Critical Security Issue?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.GMAIL_SENDER_EMAIL }}",
+        "toEmail": "={{ $env.NOTIFICATION_EMAIL }}",
+        "subject": "=Critical security issue in PR #{{ $('Parse Callback Data').first().json.pr_number }}",
+        "emailType": "text",
+        "message": "=Critical security issue detected.\n\nRepository: {{ $('Parse Callback Data').first().json.repo }}\nPR Number: {{ $('Parse Callback Data').first().json.pr_number }}\nDecision: {{ $('Parse Callback Data').first().json.decision }}\nSeverity: {{ $('Parse Callback Data').first().json.security_severity_max }}\n\nReview body:\n{{ $('Parse Callback Data').first().json.review_comment_body }}"
+      },
+      "id": "node-critical-email",
+      "name": "Send Critical Gmail Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1560, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ success: true, review_posted: true, github_review_id: $('Post GitHub Review').first().json.id }",
+        "options": {}
+      },
+      "id": "node-final-response",
+      "name": "Final Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 360]
+    }
+  ],
+  "connections": {
+    "Callback Webhook": {
+      "main": [[{ "node": "Parse Callback Data", "type": "main", "index": 0 }]]
+    },
+    "Parse Callback Data": {
+      "main": [[{ "node": "Post GitHub Review", "type": "main", "index": 0 }]]
+    },
+    "Post GitHub Review": {
+      "main": [[{ "node": "Has Airtable Record ID?", "type": "main", "index": 0 }]]
+    },
+    "Has Airtable Record ID?": {
+      "main": [
+        [{ "node": "Update PR Review Record", "type": "main", "index": 0 }],
+        [{ "node": "Is Critical Security Issue?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Update PR Review Record": {
+      "main": [[{ "node": "Is Critical Security Issue?", "type": "main", "index": 0 }]]
+    },
+    "Is Critical Security Issue?": {
+      "main": [
+        [{ "node": "Send Critical Gmail Alert", "type": "main", "index": 0 }],
+        [{ "node": "Final Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Critical Gmail Alert": {
+      "main": [[{ "node": "Final Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

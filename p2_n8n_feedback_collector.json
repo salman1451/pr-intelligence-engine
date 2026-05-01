@@ -1,0 +1,136 @@
+{
+  "name": "Feedback Collector",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Daily Cron 8am UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "PRReviews",
+        "filterByFormula": "AND(status='complete', feedback_collected=FALSE(), github_review_id!=BLANK())",
+        "maxRecords": 50
+      },
+      "id": "node-get-reviews",
+      "name": "Get Unprocessed Reviews",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $json.fields.repo }}/pulls/{{ $json.fields.pr_number }}/reviews",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.GITHUB_TOKEN }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-get-reviews-api",
+      "name": "Get PR Review Reactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reviews = $input.first().json;\nconst signals = [];\n\nif (Array.isArray(reviews)) {\n  for (const review of reviews) {\n    const body = (review.body || '').toLowerCase();\n    if (body.includes('thumbs_up') || body.includes(':+1:')) {\n      signals.push({ signal_type: 'thumbs_up', signal_value: 'positive' });\n    }\n    if (body.includes('thumbs_down') || body.includes(':-1:')) {\n      signals.push({ signal_type: 'thumbs_down', signal_value: 'negative' });\n    }\n  }\n}\n\nconst positive = signals.filter(signal => signal.signal_value === 'positive').length;\nconst negative = signals.filter(signal => signal.signal_value === 'negative').length;\n\nreturn [{\n  json: {\n    signals_json: JSON.stringify(signals),\n    total_signals: signals.length,\n    positive_signals: positive,\n    negative_signals: negative\n  }\n}];"
+      },
+      "id": "node-process-feedback",
+      "name": "Process Feedback Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "FeedbackLog",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_id": "={{ $('Get Unprocessed Reviews').first().json.fields.run_id }}",
+            "pr_number": "={{ $('Get Unprocessed Reviews').first().json.fields.pr_number }}",
+            "repo": "={{ $('Get Unprocessed Reviews').first().json.fields.repo }}",
+            "signal_source": "github_review_body",
+            "signals_json": "={{ $('Process Feedback Signals').first().json.signals_json }}",
+            "total_signals": "={{ $('Process Feedback Signals').first().json.total_signals }}",
+            "positive_signals": "={{ $('Process Feedback Signals').first().json.positive_signals }}",
+            "negative_signals": "={{ $('Process Feedback Signals').first().json.negative_signals }}",
+            "recorded_at": "={{ $now }}"
+          }
+        }
+      },
+      "id": "node-save-feedback",
+      "name": "Save Feedback to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "PRReviews",
+        "id": "={{ $('Get Unprocessed Reviews').first().json.id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "feedback_collected": true
+          }
+        }
+      },
+      "id": "node-mark-collected",
+      "name": "Mark Feedback Collected",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Daily Cron 8am UTC": {
+      "main": [[{ "node": "Get Unprocessed Reviews", "type": "main", "index": 0 }]]
+    },
+    "Get Unprocessed Reviews": {
+      "main": [[{ "node": "Get PR Review Reactions", "type": "main", "index": 0 }]]
+    },
+    "Get PR Review Reactions": {
+      "main": [[{ "node": "Process Feedback Signals", "type": "main", "index": 0 }]]
+    },
+    "Process Feedback Signals": {
+      "main": [[{ "node": "Save Feedback to Airtable", "type": "main", "index": 0 }]]
+    },
+    "Save Feedback to Airtable": {
+      "main": [[{ "node": "Mark Feedback Collected", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

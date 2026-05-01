@@ -1,0 +1,6 @@
+agent_name,version,is_active,updated_at,notes
+diff_parser,v1.0,TRUE,2026-04-20,Initial prompt used by current FastAPI app
+security_reviewer,v1.0,TRUE,2026-04-20,Focused on high-signal vulnerabilities only
+style_reviewer,v1.0,TRUE,2026-04-20,Checks naming type hints and docstrings
+refactor_reviewer,v1.0,TRUE,2026-04-20,Suggests maintainability improvements
+review_writer,v1.0,TRUE,2026-04-20,Formats final markdown review output

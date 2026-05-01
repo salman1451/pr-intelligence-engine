@@ -1,0 +1,6 @@
+agent_name,purpose,input_data,output_data,is_enabled
+diff_parser,Parse raw pull request diffs into structured files and chunks,raw_diff,"changed_files, parsed_chunks",TRUE
+security_reviewer,Find security vulnerabilities in parsed code chunks,parsed_chunks,"security_findings, security_severity_max",TRUE
+style_reviewer,Check style and convention issues in parsed code chunks,parsed_chunks,"style_findings, style_compliance_score",TRUE
+refactor_reviewer,Suggest maintainability improvements from parsed code chunks,parsed_chunks,refactor_suggestions,TRUE
+review_writer,Compose the final markdown review comment,review_state,review_comment_body,TRUE

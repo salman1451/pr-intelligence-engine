@@ -29,7 +29,7 @@ compliance_score is 0-100 (100 = perfect compliance).
 """
 
 api_key = os.getenv("GROQ_API_KEY")
-model_name = os.getenv("GROQ_MODEL", "llama3-70b-8192")
+model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 def style_node(state: ReviewState):

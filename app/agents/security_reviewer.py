@@ -29,7 +29,7 @@ Output ONLY valid JSON:
 """
 
 api_key = os.getenv("GROQ_API_KEY")
-model_name = os.getenv("GROQ_MODEL", "llama3-70b-8192")
+model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 def _pick_higher_severity(current: str, candidate: str) -> str:

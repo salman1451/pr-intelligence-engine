@@ -73,7 +73,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 ```env
 GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=llama3-70b-8192
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
 ### 3. Run the API

@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ReviewRequest(BaseModel):
@@ -26,6 +25,8 @@ class ReviewResponse(BaseModel):
 
 
 class ReviewState(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     run_id: str
     pr: int
     repo: str
@@ -42,3 +43,4 @@ class ReviewState(BaseModel):
     decision: str = "comment"
     comment: str = ""
     github_review_id: int | None = None
+    parse_error: bool = False

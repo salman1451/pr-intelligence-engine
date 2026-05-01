@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,7 +15,7 @@ app.add_middleware(
 )
 
 
-
 @app.post("/api/v1/review", response_model=ReviewResponse, summary="Review Pull Request")
 async def review(payload: ReviewRequest) -> ReviewResponse:
-    return review_pull_request(payload)
+    # Use to_thread to avoid blocking the event loop with the synchronous review_pull_request
+    return await asyncio.to_thread(review_pull_request, payload)

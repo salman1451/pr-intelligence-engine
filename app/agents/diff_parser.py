@@ -43,18 +43,24 @@ def parse_diff_node(state: ReviewState):
         "raw_diff": state.raw_diff[:8000]
     })
 
+    parse_error = False
     if content:
         try:
             clean_content = content.strip().replace("```json", "").replace("```", "")
             diff = json.loads(clean_content)
+            if not diff.get("changed_files") and not diff.get("parsed_chunks"):
+                parse_error = True
         except:
             diff = {}
+            parse_error = True
     else:
         diff = {}
+        parse_error = True
 
     return {
         "files": diff.get("changed_files", []),
-        "chunks": diff.get("parsed_chunks", [])
+        "chunks": diff.get("parsed_chunks", []),
+        "parse_error": parse_error
     }
 
 
@@ -62,6 +68,9 @@ TEXT_ONLY_LANGUAGES = {"text", "markdown"}
 
 
 def should_analyze_code(state: ReviewState):
+    if state.parse_error:
+        return "skip"
+        
     for file in state.files:
         language = file.get("language", "").lower()
         if language != "" and language not in TEXT_ONLY_LANGUAGES:

@@ -15,22 +15,18 @@ The system uses a stateful directed acyclic graph (DAG) to process code diffs in
 
 ```mermaid
 graph TD
-    START((Start)) --> PD[Parse Diff]
-    PD --> Router{Code File?}
+    A[Start] --> B[Parse Diff]
+    B --> C{Is Code File?}
     
-    Router -- Yes --> SEC[Security Reviewer]
-    SEC --> STY[Style Reviewer]
-    STY --> REF[Refactor Reviewer]
-    REF --> DEC[Decision Maker]
+    C -- Yes --> D[Security Reviewer]
+    D --> E[Style Reviewer]
+    E --> F[Refactor Reviewer]
+    F --> G[Decision Maker]
     
-    Router -- No --> DEC
+    C -- No --> G
     
-    DEC --> WR[Write Review]
-    WR --> END((End))
-    
-    style START fill:#f9f,stroke:#333,stroke-width:4px
-    style END fill:#f9f,stroke:#333,stroke-width:4px
-    style Router fill:#fff4dd,stroke:#d4a017,stroke-width:2px
+    G --> H[Write Review]
+    H --> I[End]
 ```
 
 ---
